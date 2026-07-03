@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Aspekt-Auswahl (4 Situationen)</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --correct-color: #38a169;
+            --incorrect-color: #e53e3e;
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            max-width: 600px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 25%;
+            transition: width 0.3s ease;
+        }
+
+        .header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        .header h2 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .context {
+            font-size: 0.95rem;
+            color: #4a5568;
+            line-height: 1.5;
+            background: #ebf8ff;
+            padding: 12px 16px;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .sentence-box {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e0;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .sentence {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .gap {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding: 0 10px;
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            padding: 18px 24px;
+            font-size: 1.25rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            background-color: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .option-btn .badge {
+            font-size: 0.85rem;
+            background: #edf2f7;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: #718096;
+        }
+
+        .option-btn.correct {
+            border-color: var(--correct-color);
+            background-color: #f0fff4;
+            color: var(--correct-color);
+        }
+
+        .option-btn.incorrect {
+            border-color: var(--incorrect-color);
+            background-color: #fff5f5;
+            color: var(--incorrect-color);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .feedback-box {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+
+        .feedback-box.correct-bg {
+            background-color: #f0fff4;
+            border: 1px solid var(--correct-color);
+            color: #22543d;
+        }
+
+        .feedback-box.incorrect-bg {
+            background-color: #fff5f5;
+            border: 1px solid var(--incorrect-color);
+            color: #742a2a;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .nav-btn, .reset-btn {
+            margin-top: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .nav-btn:hover, .reset-btn:hover {
+            background-color: #235284;
+        }
+
+        .score-screen {
+            text-align: center;
+            display: none;
+        }
+
+        .score-screen h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .score-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--correct-color);
+        }
+
+        @media (min-width: 600px) {
+            .options-container {
+                flex-direction: row;
+            }
+            .option-btn {
+                flex: 1;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                text-align: center;
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Quiz-Bereich -->
+    <div id="quiz-area">
+        <div class="progress-bar">
+            <div id="progress" class="progress-fill"></div>
+        </div>
+
+        <div class="header">
+            <h2>Übung: Aspekt-Auswahl <span id="question-counter">1/4</span></h2>
+            <div id="context" class="context"></div>
+        </div>
+
+        <div class="sentence-box">
+            <div id="sentence-display" class="sentence">Что туда <span id="gap" class="gap">...</span> ?</div>
+        </div>
+
+        <div class="options-container">
+            <button id="opt1" class="option-btn" onclick="checkAnswer(0)">
+                <span id="opt1-text"></span>
+                <span class="badge">imperfektiver Aspekt</span>
+            </button>
+            <button id="opt2" class="option-btn" onclick="checkAnswer(1)">
+                <span id="opt2-text"></span>
+                <span class="badge">perfektiver Aspekt</span>
+            </button>
+        </div>
+
+        <div id="feedback" class="feedback-box">
+            <div id="feedback-title" class="feedback-title"></div>
+            <p id="feedback-text"></p>
+            <button id="next-btn" class="nav-btn" onclick="nextQuestion()">Nächste Situation</button>
+        </div>
+    </div>
+
+    <!-- Ergebnis-Bildschirm -->
+    <div id="score-area" class="score-screen">
+        <h2>Übung beendet!</h2>
+        <p>Du hast alle Alltagssituationen gemeistert.</p>
+        <div class="score-number" id="final-score">0 / 4</div>
+        <p style="margin-bottom: 20px; color: #4a5568;">Merke: Nach „что“ nutzen wir in diesen rhetorischen Fragen immer den unvollendeten (imperfektiven) Aspekt!</p>
+        <button class="reset-btn" onclick="restartQuiz()">Neustart</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            context: "<strong>Situation 1:</strong> Jemand schlägt vor, in der Poliklinik anzurufen. Du weißt aber, dass dort um diese Uhrzeit sowieso niemand abhebt (es ist also völlig zwecklos).",
+            sentenceStart: "Что туда ",
+            sentenceEnd: " ?",
+            options: ["звонить", "позвонить"],
+            correctIndex: 0,
+            explanation: "„Что туда звонить?“ bedeutet: Was bringt es, dort anzurufen? Da es zwecklos ist, nutzt man zwingend den imperfektiven Aspekt."
+        },
+        {
+            context: "<strong>Situation 2:</strong> Ein Freund will mit dir über ein Thema diskutieren, bei dem ihr euch niemals einig werdet. Du möchtest sagen: „Es hat keinen Sinn, darüber zu streiten“.",
+            sentenceStart: "Что тут ",
+            sentenceEnd: " ?",
+            options: ["спорить", "поспорить"],
+            correctIndex: 0,
+            explanation: "„Что тут спорить?“ drückt aus, dass jede weitere Diskussion reine Zeitverschwendung wäre."
+        },
+        {
+            context: "<strong>Situation 3:</strong> Jemand schlägt vor, einen Brief an das Amt zu schreiben, obwohl die Entscheidung ohnehin schon rechtskräftig feststeht.",
+            sentenceStart: "Что им ",
+            sentenceEnd: " ?",
+            options: ["писать", "написать"],
+            correctIndex: 0,
+            explanation: "„Что им писать?“ signalisiert: Spar dir die Mühe des Schreibens, es ändert ohnehin nichts am Ergebnis."
+        },
+        {
+            context: "<strong>Situation 4:</strong> Ein Bekannter möchte den Chef um Urlaub bitten, obwohl dieser bekanntermaßen extrem schlechte Laune hat und heute alles ablehnt.",
+            sentenceStart: "Что у него ",
+            sentenceEnd: " ?",
+            options: ["спрашивать", "спросить"],
+            correctIndex: 0,
+            explanation: "„Что у него спрашивать?“ bedeutet: Es ist völlig umsonst, ihn jetzt zu fragen, die Antwort wird sowieso Nein sein."
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    function loadQuestion() {
+        const q = questions[currentQuestionIndex];
+        
+        // UI aktualisieren
+        document.getElementById('question-counter').innerText = `${currentQuestionIndex + 1}/${questions.length}`;
+        document.getElementById('progress').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+        document.getElementById('context').innerHTML = q.context;
+        
+        // Satz mit leerer Lücke aufbauen
+        document.getElementById('sentence-display').innerHTML = `${q.sentenceStart}<span id="gap" class="gap">...</span>${q.sentenceEnd}`;
+        
+        // Buttons beschriften
+        document.getElementById('opt1-text').innerText = q.options[0];
+        document.getElementById('opt2-text').innerText = q.options[1];
+        
+        // Buttons zurücksetzen
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('correct', 'incorrect');
+        });
+        
+        // Feedback ausblenden
+        document.getElementById('feedback').style.display = 'none';
+    }
+
+    function checkAnswer(selectedIndex) {
+        const q = questions[currentQuestionIndex];
+        const buttons = document.querySelectorAll('.option-btn');
+        const gap = document.getElementById('gap');
+        const feedback = document.getElementById('feedback');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+
+        buttons.forEach(btn => btn.disabled = true);
+        gap.innerText = q.options[selectedIndex];
+
+        if (selectedIndex === q.correctIndex) {
+            buttons[selectedIndex].classList.add('correct');
+            feedback.className = "feedback-box correct-bg";
+            feedbackTitle.innerText = "Richtig! 🎉";
+            score++;
+        } else {
+            buttons[selectedIndex].classList.add('incorrect');
+            buttons[q.correctIndex].classList.add('correct');
+            feedback.className = "feedback-box incorrect-bg";
+            feedbackTitle.innerText = "Nicht ganz richtig. 😕";
+        }
+
+        feedbackText.innerHTML = q.explanation;
+        
+        // Button-Text für die letzte Frage anpassen
+        if (currentQuestionIndex === questions.length - 1) {
+            document.getElementById('next-btn').innerText = "Auswertung anzeigen";
+        } else {
+            document.getElementById('next-btn').innerText = "Nächste Situation";
+        }
+        
+        feedback.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            loadQuestion();
+        } else {
+            // Zeige Score-Bereich
+            document.getElementById('quiz-area').style.display = 'none';
+            document.getElementById('score-area').style.display = 'block';
+            document.getElementById('final-score').innerText = `${score} / ${questions.length}`;
+        }
+    }
+
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        document.getElementById('next-btn').innerText = "Nächste Situation";
+        document.getElementById('score-area').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+        loadQuestion();
+    }
+
+    // Erster Start des Quizzes
+    loadQuestion();
+</script>
+
+</body>
+</html>
