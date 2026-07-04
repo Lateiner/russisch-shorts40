@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Lückentext mit Dropdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Elegantes Pulsieren für das leere Dropdown */
+        @keyframes pulse-border {
+            0%, 100% { border-color: #6366f1; box-shadow: 0 0 0 0px rgba(99, 102, 241, 0.4); }
+            50% { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); }
+        }
+        .pulse-active {
+            animation: pulse-border 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 md:p-8 no-select">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 md:p-8 transition-all duration-300">
+        
+        <!-- Spiel-Bereich -->
+        <div id="game-area">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Aufgabe 6: Lückentext</span>
+                <span id="progress-text" class="text-sm font-medium text-slate-500">Frage 1 von 5</span>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 20%"></div>
+            </div>
+
+            <h1 class="text-xl md:text-2xl font-bold text-slate-900 mb-2">Finde das richtige Fragewort</h1>
+            <p class="text-slate-600 text-sm md:text-base mb-6">
+                Lies den kurzen Dialog. Welches Fragewort drückt in der Antwort von Sprecher B die absolute Sinnlosigkeit aus? Wähle die passende Option im Dropdown.
+            </p>
+
+            <!-- Dialogbox im Messenger-Stil -->
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 space-y-4">
+                <!-- Sprecher A -->
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">A</div>
+                    <div class="bg-white px-4 py-2.5 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm max-w-[85%]">
+                        <p id="speaker-a-russian" class="text-slate-900 font-semibold text-base md:text-lg"></p>
+                        <p id="speaker-a-german" class="text-slate-500 text-xs mt-1 italic"></p>
+                    </div>
+                </div>
+
+                <!-- Sprecher B -->
+                <div class="flex items-start gap-3 justify-end">
+                    <div class="bg-indigo-600 text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-md max-w-[85%] flex flex-col items-end">
+                        <div class="text-sm md:text-base font-medium leading-relaxed tracking-wide flex flex-wrap items-center gap-2 justify-end w-full">
+                            <span>—</span>
+                            <!-- Interaktives Inline-Dropdown -->
+                            <div class="relative inline-block text-left my-1">
+                                <select id="cloze-dropdown" onchange="handleDropdownChange()" class="pulse-active bg-white text-indigo-900 font-extrabold px-3 py-1.5 pr-8 rounded-lg border-2 border-indigo-300 shadow-sm text-sm md:text-base focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 cursor-pointer appearance-none transition-all">
+                                    <!-- Optionen werden dynamisch geladen -->
+                                </select>
+                                <span class="material-icons absolute right-2 top-2 text-indigo-600 pointer-events-none text-base">arrow_drop_down</span>
+                            </div>
+                            <span id="speaker-b-russian-rest"></span>
+                        </div>
+                        <p id="speaker-b-german-translation" class="text-indigo-100 text-xs mt-1.5 italic hidden text-right"></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">B</div>
+                </div>
+            </div>
+
+            <!-- Feedback / Erklärung -->
+            <div id="feedback-overlay" class="hidden rounded-xl p-5 mb-6 transition-all duration-300">
+                <div class="flex items-start gap-3">
+                    <span id="feedback-icon" class="material-icons text-2xl"></span>
+                    <div>
+                        <h4 id="feedback-title" class="font-bold text-sm md:text-base"></h4>
+                        <p id="feedback-desc" class="text-xs md:text-sm mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="next-button" onclick="loadNextQuestion()" class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all duration-200 active:scale-95">
+                        <span>Weiter</span>
+                        <span class="material-icons text-sm">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ergebnis-Bereich -->
+        <div id="score-area" class="hidden text-center py-6">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-icons text-4xl">emoji_events</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Lückentext abgeschlossen! 🎉</h2>
+            <p class="text-slate-600 max-w-md mx-auto mb-6">
+                Du hast gelernt, das Fragewort <strong class="text-indigo-600">что</strong> gezielt einzusetzen, um Zwecklosigkeit in russischen Alltagsgesprächen auszudrücken.
+            </p>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 max-w-sm mx-auto mb-8">
+                <span class="text-xs font-bold uppercase tracking-widest text-indigo-500 block mb-1">Dein Score:</span>
+                <span id="score-text" class="text-3xl font-extrabold text-indigo-900">0 von 5 richtig</span>
+            </div>
+            <button onclick="restartQuiz()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl mx-auto transition-all duration-200 active:scale-95">
+                <span class="material-icons text-lg">replay</span>
+                <span>Neustart</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            {
+                speakerA_RU: "Позвони в поликлинику, запишись на приём.",
+                speakerA_DE: "„Ruf in der Poliklinik an, vereinbare einen Termin.“",
+                speakerB_RU_rest: "туда звонить? Всё равно никто не ответит.",
+                speakerB_DE: "— Was bringt es, dort anzurufen? Es wird eh niemand abheben.",
+                options: ["Как", "Что", "Где"],
+                correctAnswer: "Что",
+                explanation: "<strong>Richtig!</strong> Um die absolute Sinnlosigkeit des Anrufs auszudrücken („Was bringt es überhaupt...“), wird das Fragewort <strong>что</strong> zusammen mit dem unvollendeten Verb verwendet."
+            },
+            {
+                speakerA_RU: "Давай обсудим это решение ещё раз.",
+                speakerA_DE: "„Lass uns diese Entscheidung noch einmal besprechen.“",
+                speakerB_RU_rest: "тут обсуждать? Всё уже решено.",
+                speakerB_DE: "— Was gibt es da zu besprechen? Es ist bereits alles entschieden.",
+                options: ["Что", "Зачем", "Почему"],
+                correctAnswer: "Что",
+                explanation: "<strong>Richtig!</strong> „Что тут обсуждать?“ bedeutet, dass jede weitere Diskussion überflüssig ist. Das unvollendete Verb (обсуждать) verstärkt dieses Gefühl der Resignation."
+            },
+            {
+                speakerA_RU: "Надо спросить шефа, можно ли уйти пораньше.",
+                speakerA_DE: "„Wir müssen den Chef fragen, ob wir früher gehen können.“",
+                speakerB_RU_rest: "у него спрашивать? Он сегодня очень злой.",
+                speakerB_DE: "— Was soll man ihn fragen? Er ist heute extrem wütend.",
+                options: ["Когда", "Кто", "Что"],
+                correctAnswer: "Что",
+                explanation: "<strong>Richtig!</strong> „Что спрашивать?“ drückt aus, dass die Frage wegen der schlechten Laune des Chefs ohnehin sinnlos ist."
+            },
+            {
+                speakerA_RU: "Напиши жалобу в ведомство.",
+                speakerA_DE: "„Schreib eine Beschwerde an die Behörde.“",
+                speakerB_RU_rest: "им писать? Решение уже не изменится.",
+                speakerB_DE: "— Was soll man ihnen schreiben? Die Entscheidung ändert sich sowieso nicht mehr.",
+                options: ["Что", "Куда", "Как"],
+                correctAnswer: "Что",
+                explanation: "<strong>Richtig!</strong> „Что им писать?“ zeigt, dass der Versuch, einen Brief zu verfassen, reine Zeitverschwendung wäre."
+            },
+            {
+                speakerA_RU: "Давай продолжим этот спор.",
+                speakerA_DE: "„Lass uns diese Debatte fortführen.“",
+                speakerB_RU_rest: "тут спорить? Всё равно каждый останется при своём.",
+                speakerB_DE: "— Was bringt es, hier zu streiten? Jeder bleibt sowieso bei seiner Meinung.",
+                options: ["Почему", "Что", "Где"],
+                correctAnswer: "Что",
+                explanation: "<strong>Richtig!</strong> „Что тут спорить?“ drückt perfekt aus, dass der Streit absolut zwecklos ist."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        function initQuestion() {
+            isAnswered = false;
+            
+            // Overlay ausblenden
+            document.getElementById("feedback-overlay").classList.add("hidden");
+            document.getElementById("speaker-b-german-translation").classList.add("hidden");
+
+            const q = questions[currentQuestion];
+
+            // Texte updaten
+            document.getElementById("progress-text").innerText = `Frage ${currentQuestion + 1} von ${questions.length}`;
+            document.getElementById("progress-bar").style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+            
+            document.getElementById("speaker-a-russian").innerText = q.speakerA_RU;
+            document.getElementById("speaker-a-german").innerText = q.speakerA_DE;
+            document.getElementById("speaker-b-russian-rest").innerText = q.speakerB_RU_rest;
+            document.getElementById("speaker-b-german-translation").innerText = q.speakerB_DE;
+
+            // Dropdown füllen
+            const select = document.getElementById("cloze-dropdown");
+            select.disabled = false;
+            select.className = "pulse-active bg-white text-indigo-900 font-extrabold px-3 py-1.5 pr-8 rounded-lg border-2 border-indigo-300 shadow-sm text-sm md:text-base focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 cursor-pointer appearance-none transition-all";
+            
+            select.innerHTML = '<option value="" disabled selected>?</option>';
+            q.options.forEach(opt => {
+                const el = document.createElement("option");
+                el.value = opt;
+                el.innerText = opt;
+                select.appendChild(el);
+            });
+        }
+
+        function handleDropdownChange() {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const select = document.getElementById("cloze-dropdown");
+            const selectedVal = select.value;
+            const q = questions[currentQuestion];
+            const isCorrect = selectedVal === q.correctAnswer;
+
+            select.disabled = true;
+            select.classList.remove("pulse-active");
+
+            if (isCorrect) {
+                score++;
+                select.className = "bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1.5 pr-8 rounded-lg border-2 border-emerald-500 shadow-sm text-sm md:text-base appearance-none transition-all";
+                showFeedback(true, q.explanation);
+            } else {
+                select.className = "bg-rose-100 text-rose-800 font-extrabold px-3 py-1.5 pr-8 rounded-lg border-2 border-rose-500 shadow-sm text-sm md:text-base appearance-none transition-all";
+                const wrongExplanation = `<strong>Leider falsch.</strong> Das Wort <strong>${selectedVal}</strong> passt hier im Kontext der Nutzlosigkeit nicht. Hier wird zwingend das Schlüsselwort <strong>что</strong> benötigt.`;
+                showFeedback(false, wrongExplanation);
+            }
+
+            // Übersetzung von Sprecher B einblenden
+            document.getElementById("speaker-b-german-translation").classList.remove("hidden");
+        }
+
+        function showFeedback(isCorrect, text) {
+            const overlay = document.getElementById("feedback-overlay");
+            const icon = document.getElementById("feedback-icon");
+            const title = document.getElementById("feedback-title");
+            const desc = document.getElementById("feedback-desc");
+
+            overlay.classList.remove("hidden");
+
+            if (isCorrect) {
+                overlay.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "check_circle";
+                icon.className = "material-icons text-emerald-600 text-2xl";
+                title.innerText = "Hervorragend!";
+                title.className = "font-bold text-sm md:text-base text-emerald-900";
+            } else {
+                overlay.className = "bg-rose-50 border border-rose-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "error";
+                icon.className = "material-icons text-rose-600 text-2xl";
+                title.innerText = "Falsch zugeordnet.";
+                title.className = "font-bold text-sm md:text-base text-rose-900";
+            }
+
+            desc.innerHTML = text;
+        }
+
+        function loadNextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                initQuestion();
+            } else {
+                // Quiz beendet
+                document.getElementById("game-area").classList.add("hidden");
+                document.getElementById("score-area").classList.remove("hidden");
+                document.getElementById("score-text").innerText = `${score} von ${questions.length} richtig`;
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById("score-area").classList.add("hidden");
+            document.getElementById("game-area").classList.remove("hidden");
+            initQuestion();
+        }
+
+        // Init beim Laden der Seite
+        window.onload = function() {
+            initQuestion();
+        };
+    </script>
+</body>
+</html>
