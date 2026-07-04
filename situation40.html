@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Situations-Matching</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Verhindert Textmarkierung beim schnellen Tippen auf Mobilgeräten */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 md:p-8 no-select">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-4xl w-full p-6 md:p-8 transition-all duration-300">
+        
+        <!-- Header-Bereich -->
+        <div class="border-b border-slate-100 pb-6 mb-6">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Aufgabe 2</span>
+                <span id="progress-text" class="text-sm font-medium text-slate-500">Gelöst: 0/4</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mb-2">Umgangssprachliches Matching</h1>
+            <p class="text-slate-600 text-sm md:text-base">
+                Verbinde die Alltagssituationen auf der linken Seite mit der jeweils passenden, ausweglosen Reaktion auf der rechten Seite. 
+                Tippe dazu einfach erst eine Karte links und dann die passende Karte rechts an.
+            </p>
+        </div>
+
+        <div id="status-bar" class="mb-6 p-4 rounded-xl bg-slate-50 text-slate-700 text-sm font-medium flex items-center gap-2 transition-all duration-300">
+            <span class="material-icons text-blue-500">info</span>
+            <span id="status-text">Wähle zuerst eine Situation aus der linken Spalte.</span>
+        </div>
+
+        <!-- Spielfeld: Zwei Spalten (Situationen & Reaktionen) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Linke Spalte: Situationen -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Alltagssituationen</h3>
+                <div id="situations-column" class="flex flex-col gap-3">
+                    <!-- Wird dynamisch per JS befüllt -->
+                </div>
+            </div>
+
+            <!-- Rechte Spalte: Reaktionen -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Russische Reaktionen (Zwecklosigkeit)</h3>
+                <div id="reactions-column" class="flex flex-col gap-3">
+                    <!-- Wird dynamisch per JS befüllt -->
+                </div>
+            </div>
+
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-6 gap-4">
+            <div class="text-xs text-slate-400 flex items-center gap-1">
+                <span class="material-icons text-sm">touch_app</span>
+                <span>Optimiert für Touch- und Desktopbedienung</span>
+            </div>
+            
+            <button onclick="resetGame()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-xl transition-all duration-200 active:scale-95">
+                <span class="material-icons text-lg">replay</span>
+                <span>Neustart</span>
+            </button>
+        </div>
+
+    </div>
+
+    <div id="success-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform scale-95 transition-transform duration-300">
+            <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-icons text-emerald-500 text-4xl">done_all</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Großartig gelöst! 🎉</h2>
+            <p class="text-slate-600 mb-6">
+                Du hast alle Situationen perfekt zugeordnet. Merke dir: Der imperfektive Aspekt nach <strong class="text-blue-600">что</strong> betont immer, wie sinnlos es ist, die Handlung überhaupt erst zu versuchen.
+            </p>
+            <button onclick="closeSuccessOverlay()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-200 active:scale-95">
+                Zurück zur Übersicht
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Spieldaten
+        const data = [
+            { id: 1, situation: "In der Poliklinik hebt um diese Uhrzeit sowieso niemand ab.", reaction: "Что туда звонить?", explanation: "Es bringt nichts, dort anzurufen, da sowieso niemand abhebt." },
+            { id: 2, situation: "Ihr werdet euch bei dieser hitzigen Diskussion niemals einig werden.", reaction: "Что тут спорить?", explanation: "Es hat absolut keinen Sinn, weiter darüber zu streiten." },
+            { id: 3, situation: "Der Brief an das Amt wird die fertige Entscheidung nicht mehr ändern.", reaction: "Что им писать?", explanation: "Es ist sinnlos, ihnen zu schreiben, da alles schon entschieden ist." },
+            { id: 4, situation: "Der Chef hat extrem schlechte Laune und lehnt heute ohnehin alles ab.", reaction: "Что у него спрашивать?", explanation: "Es ist nutzlos, ihn jetzt zu fragen, er wird ohnehin Nein sagen." }
+        ];
+
+        let selectedSituationId = null;
+        let selectedReactionId = null;
+        let matchedIds = [];
+
+        // Hilfsfunktion zum Mischen von Arrays (Fisher-Yates)
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initGame() {
+            selectedSituationId = null;
+            selectedReactionId = null;
+            matchedIds = [];
+            
+            updateProgress();
+            updateStatusBar("Wähle zuerst eine Situation aus der linken Spalte.");
+
+            // Mische Situationen und Reaktionen unabhängig voneinander
+            const shuffledSituations = shuffle([...data]);
+            const shuffledReactions = shuffle([...data]);
+
+            const sitCol = document.getElementById("situations-column");
+            const reactCol = document.getElementById("reactions-column");
+
+            sitCol.innerHTML = "";
+            reactCol.innerHTML = "";
+
+            // Render Situationskarten
+            shuffledSituations.forEach(item => {
+                const btn = document.createElement("button");
+                btn.id = `sit-${item.id}`;
+                btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50 transition-all duration-200 focus:outline-none flex items-center justify-between gap-3";
+                btn.onclick = () => selectSituation(item.id);
+                btn.innerHTML = `
+                    <span class="text-sm md:text-base font-medium text-slate-700">${item.situation}</span>
+                    <span class="material-icons text-slate-300 text-lg flex-shrink-0">help_outline</span>
+                `;
+                sitCol.appendChild(btn);
+            });
+
+            // Render Reaktionskarten
+            shuffledReactions.forEach(item => {
+                const btn = document.createElement("button");
+                btn.id = `react-${item.id}`;
+                btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50 transition-all duration-200 focus:outline-none flex items-center justify-between gap-3";
+                btn.onclick = () => selectReaction(item.id);
+                btn.innerHTML = `
+                    <span class="text-base md:text-lg font-bold text-slate-800 tracking-wide">${item.reaction}</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded">imperfektiv</span>
+                `;
+                reactCol.appendChild(btn);
+            });
+        }
+
+        function selectSituation(id) {
+            if (matchedIds.includes(id)) return;
+
+            // Altes Highlight entfernen
+            if (selectedSituationId) {
+                const prev = document.getElementById(`sit-${selectedSituationId}`);
+                if (prev) prev.className = prev.className.replace("border-blue-500 bg-blue-50/50", "border-slate-200 bg-white");
+            }
+
+            selectedSituationId = id;
+            const current = document.getElementById(`sit-${id}`);
+            current.className = current.className.replace("border-slate-200 bg-white", "border-blue-500 bg-blue-50/50");
+
+            updateStatusBar("Gute Wahl! Finde nun die passende russische Reaktion in der rechten Spalte.");
+            checkMatch();
+        }
+
+        function selectReaction(id) {
+            if (matchedIds.includes(id)) return;
+
+            // Altes Highlight entfernen
+            if (selectedReactionId) {
+                const prev = document.getElementById(`react-${selectedReactionId}`);
+                if (prev) prev.className = prev.className.replace("border-blue-500 bg-blue-50/50", "border-slate-200 bg-white");
+            }
+
+            selectedReactionId = id;
+            const current = document.getElementById(`react-${id}`);
+            current.className = current.className.replace("border-slate-200 bg-white", "border-blue-500 bg-blue-50/50");
+
+            updateStatusBar("Suche jetzt links nach der passenden Alltagssituation.");
+            checkMatch();
+        }
+
+        function checkMatch() {
+            if (selectedSituationId && selectedReactionId) {
+                const sitBtn = document.getElementById(`sit-${selectedSituationId}`);
+                const reactBtn = document.getElementById(`react-${selectedReactionId}`);
+
+                if (selectedSituationId === selectedReactionId) {
+                    // Match ist korrekt!
+                    const matchId = selectedSituationId;
+                    matchedIds.push(matchId);
+
+                    // Visuelles Feedback für richtiges Match
+                    applyMatchedStyles(sitBtn, reactBtn, matchId);
+                    
+                    const matchData = data.find(item => item.id === matchId);
+                    updateStatusBar(`Richtig! „${matchData.reaction}“ passt ideal zu: ${matchData.explanation}`, "success");
+                    
+                    selectedSituationId = null;
+                    selectedReactionId = null;
+                    updateProgress();
+
+                    // Überprüfe, ob das Spiel gewonnen wurde
+                    if (matchedIds.length === data.length) {
+                        setTimeout(showSuccessOverlay, 1200);
+                    }
+                } else {
+                    // Falsches Match!
+                    updateStatusBar("Schade! Diese Kombination passt leider nicht zusammen. Versuche es noch einmal.", "error");
+                    applyErrorStyles(sitBtn, reactBtn);
+                }
+            }
+        }
+
+        function applyMatchedStyles(sitBtn, reactBtn, id) {
+            // Situation-Stil
+            sitBtn.onclick = null;
+            sitBtn.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/30 transition-all duration-300 flex items-center justify-between gap-3 cursor-default";
+            sitBtn.querySelector('.material-icons').innerText = "check_circle";
+            sitBtn.querySelector('.material-icons').className = "material-icons text-emerald-500 text-lg flex-shrink-0";
+
+            // Reaktion-Stil
+            reactBtn.onclick = null;
+            reactBtn.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/30 transition-all duration-300 flex items-center justify-between gap-3 cursor-default";
+            const badge = reactBtn.querySelector('.text-xs');
+            badge.innerText = "korrekt";
+            badge.className = "text-xs bg-emerald-500 text-white font-bold px-2 py-1 rounded";
+        }
+
+        function applyErrorStyles(sitBtn, reactBtn) {
+            // Kurzzeitig rot aufblinken lassen
+            sitBtn.className = sitBtn.className.replace("border-blue-500 bg-blue-50/50", "border-rose-500 bg-rose-50/30");
+            reactBtn.className = reactBtn.className.replace("border-blue-500 bg-blue-50/50", "border-rose-500 bg-rose-50/30");
+
+            setTimeout(() => {
+                // Nur zurücksetzen, falls der Nutzer in der Zwischenzeit nicht schon etwas anderes angeklickt hat
+                if (selectedSituationId !== null) {
+                    sitBtn.className = sitBtn.className.replace("border-rose-500 bg-rose-50/30", "border-slate-200 bg-white");
+                }
+                if (selectedReactionId !== null) {
+                    reactBtn.className = reactBtn.className.replace("border-rose-500 bg-rose-50/30", "border-slate-200 bg-white");
+                }
+                selectedSituationId = null;
+                selectedReactionId = null;
+            }, 1000);
+        }
+
+        // Hilfsfunktionen für UI-Status
+        function updateProgress() {
+            document.getElementById("progress-text").innerText = `Gelöst: ${matchedIds.length}/${data.length}`;
+        }
+
+        function updateStatusBar(text, type = "info") {
+            const bar = document.getElementById("status-bar");
+            const icon = bar.querySelector('.material-icons');
+            const textEl = document.getElementById("status-text");
+
+            textEl.innerText = text;
+
+            if (type === "success") {
+                bar.className = "mb-6 p-4 rounded-xl bg-emerald-50 text-emerald-800 text-sm font-medium flex items-center gap-2 transition-all duration-300 border border-emerald-100";
+                icon.innerText = "check_circle";
+                icon.className = "material-icons text-emerald-500";
+            } else if (type === "error") {
+                bar.className = "mb-6 p-4 rounded-xl bg-rose-50 text-rose-800 text-sm font-medium flex items-center gap-2 transition-all duration-300 border border-rose-100";
+                icon.innerText = "error";
+                icon.className = "material-icons text-rose-500";
+            } else {
+                bar.className = "mb-6 p-4 rounded-xl bg-slate-50 text-slate-700 text-sm font-medium flex items-center gap-2 transition-all duration-300 border border-slate-100";
+                icon.innerText = "info";
+                icon.className = "material-icons text-blue-500";
+            }
+        }
+
+        function showSuccessOverlay() {
+            const overlay = document.getElementById("success-overlay");
+            overlay.classList.remove("hidden");
+            setTimeout(() => {
+                overlay.classList.remove("opacity-0");
+                overlay.querySelector('div').classList.remove("scale-95");
+            }, 50);
+        }
+
+        function closeSuccessOverlay() {
+            const overlay = document.getElementById("success-overlay");
+            overlay.classList.add("opacity-0");
+            overlay.querySelector('div').classList.add("scale-95");
+            setTimeout(() => {
+                overlay.classList.add("hidden");
+            }, 300);
+        }
+
+        function resetGame() {
+            closeSuccessOverlay();
+            initGame();
+        }
+
+        // Erster Spielstart beim Laden der Seite
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>
