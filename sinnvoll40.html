@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Sinnvoll oder Nicht?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Stapel-Effekt für die Karten */
+        .card-container {
+            perspective: 1000px;
+        }
+        .swipe-card {
+            touch-action: none;
+            will-change: transform;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+        }
+        .swipe-card.dragging {
+            transition: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 md:p-8 no-select">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-lg w-full p-6 md:p-8 transition-all duration-300">
+        
+        <!-- Spiel-Bereich -->
+        <div id="game-area">
+            <!-- Fortschritts-Anzeige -->
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Aufgabe 5: Sinnvoll oder Nicht?</span>
+                <span id="progress-text" class="text-sm font-medium text-slate-500">Frage 1 von 6</span>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 16.6%"></div>
+            </div>
+
+            <h1 class="text-xl md:text-2xl font-bold text-slate-900 mb-2">Ergibt dieser Dialog Sinn?</h1>
+            <p class="text-slate-600 text-sm mb-6">
+                Entscheide, ob die Antwort mit <strong class="text-indigo-600">что + imperfektives Verb</strong> in diesem Kontext logisch ist. 
+                Wische nach <strong>links (Nicht sinnvoll)</strong> oder nach <strong>rechts (Sinnvoll)</strong>.
+            </p>
+
+            <!-- Der Swipe-Bereich -->
+            <div class="card-container relative h-72 w-full mb-8 flex justify-center items-center">
+                <!-- Hintergrund-Placeholder-Karte für Tiefe -->
+                <div class="absolute inset-0 bg-slate-100 border border-slate-200 rounded-2xl transform scale-95 translate-y-2 opacity-50 pointer-events-none"></div>
+                
+                <!-- Aktive Karte -->
+                <div id="active-card" class="swipe-card absolute inset-0 bg-slate-900 text-white rounded-2xl p-6 md:p-8 shadow-lg flex flex-col justify-between cursor-grab active:cursor-grabbing overflow-hidden border border-slate-800">
+                    <!-- Schöner Indigo-Glanz im Hintergrund -->
+                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
+                    
+                    <!-- Swipe-Stamps (Sinnvoll / Unlogisch), die beim Ziehen erscheinen -->
+                    <div id="stamp-sinnvoll" class="absolute top-6 right-6 border-4 border-emerald-500 text-emerald-500 font-extrabold text-xl uppercase tracking-widest px-4 py-2 rounded-lg rotate-12 opacity-0 transition-opacity duration-100 pointer-events-none">
+                        Sinnvoll
+                    </div>
+                    <div id="stamp-unlogisch" class="absolute top-6 left-6 border-4 border-rose-500 text-rose-500 font-extrabold text-xl uppercase tracking-widest px-4 py-2 rounded-lg -rotate-12 opacity-0 transition-opacity duration-100 pointer-events-none">
+                        Unlogisch
+                    </div>
+
+                    <!-- Sprecher A (Kontext) -->
+                    <div class="z-10">
+                        <span class="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-1">Situation / Sprecher A:</span>
+                        <p id="context-text" class="text-slate-200 text-base md:text-lg font-medium leading-relaxed">
+                            „In der Poliklinik hebt um diese Uhrzeit sowieso niemand ab.“
+                        </p>
+                    </div>
+
+                    <!-- Trennlinie -->
+                    <div class="border-t border-slate-800 my-3 z-10"></div>
+
+                    <!-- Sprecher B (Russische Konstruktion) -->
+                    <div class="z-10">
+                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400 block mb-1">Reaktion / Sprecher B:</span>
+                        <p id="reaction-text" class="text-xl md:text-2xl font-extrabold text-white tracking-wide">
+                            — Что туда звонить?
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manuelle Buttons für Desktop/Klick-User -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <button onclick="handleManualChoice(false)" class="flex items-center justify-center gap-2 border-2 border-rose-500 text-rose-600 hover:bg-rose-50 font-bold py-4 rounded-xl transition-all duration-200 active:scale-95">
+                    <span class="material-icons">close</span>
+                    <span>Nicht sinnvoll</span>
+                </button>
+                <button onclick="handleManualChoice(true)" class="flex items-center justify-center gap-2 border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold py-4 rounded-xl transition-all duration-200 active:scale-95">
+                    <span class="material-icons">check</span>
+                    <span>Sinnvoll</span>
+                </button>
+            </div>
+
+            <!-- Feedback-Erklärung (wird nach jeder Frage eingeblendet) -->
+            <div id="explanation-overlay" class="hidden bg-slate-100 border border-slate-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]">
+                <div class="flex items-start gap-3">
+                    <span id="explanation-icon" class="material-icons text-2xl"></span>
+                    <div>
+                        <h4 id="explanation-title" class="font-bold text-sm md:text-base"></h4>
+                        <p id="explanation-desc" class="text-xs md:text-sm text-slate-600 mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="next-button" onclick="loadNextQuestion()" class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all duration-200 active:scale-95">
+                        <span>Weiter</span>
+                        <span class="material-icons text-sm">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ergebnis-Bereich -->
+        <div id="score-area" class="hidden text-center py-6">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-icons text-4xl">emoji_events</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Auswertung beendet! 🎉</h2>
+            <p class="text-slate-600 max-w-md mx-auto mb-6">
+                Du hast gelernt zu unterscheiden, wann der unvollendete Aspekt mit „что“ logisch angewendet werden kann.
+            </p>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 max-w-sm mx-auto mb-8">
+                <span class="text-xs font-bold uppercase tracking-widest text-indigo-500 block mb-1">Dein Score:</span>
+                <span id="score-text" class="text-3xl font-extrabold text-indigo-900">0 von 6 richtig</span>
+            </div>
+            <button onclick="restartQuiz()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl mx-auto transition-all duration-200 active:scale-95">
+                <span class="material-icons text-lg">replay</span>
+                <span>Neustart</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            {
+                context: "„Der Arzt wartet bereits dringend auf deinen vereinbarten Anruf.“",
+                reaction: "— Что туда звонить?",
+                isLogical: false,
+                explanation: "<strong>Nicht sinnvoll!</strong> Wenn der Arzt wartet, ist der Anruf notwendig und erwünscht. Die Konstruktion „Что звонить?“ drückt jedoch fälschlicherweise aus, dass der Anruf völlig nutzlos wäre."
+            },
+            {
+                context: "„In der Poliklinik hebt um diese Uhrzeit sowieso niemand mehr ab.“",
+                reaction: "— Что туда звонить?",
+                isLogical: true,
+                explanation: "<strong>Sinnvoll!</strong> Da ohnehin niemand abhebt, ist der Anruf reine Zeitverschwendung. Die unvollendete Rhetorik passt hier perfekt."
+            },
+            {
+                context: "„Es ist bereits alles rechtskräftig entschieden. Jede weitere Diskussion bringt nichts mehr.“",
+                reaction: "— Что тут спорить?",
+                isLogical: true,
+                explanation: "<strong>Sinnvoll!</strong> Weiterer Streit ist zwecklos und ändert das Ergebnis nicht. „Что тут спорить?“ (Was bringt es hier zu streiten?) trifft es genau."
+            },
+            {
+                context: "„Wir müssen uns jetzt dringend für die Prüfung absprechen, sonst fallen wir durch!“",
+                reaction: "— Что тут обсуждать?",
+                isLogical: false,
+                explanation: "<strong>Nicht sinnvoll!</strong> Wenn die Prüfung bevorsteht und eine Absprache überlebenswichtig ist, ist Diskussion keineswegs zwecklos oder überflüssig."
+            },
+            {
+                context: "„Der Chef hat heute extrem gute Laune und verteilt großzügig Bonusurlaub an alle.“",
+                reaction: "— Что у него спрашивать?",
+                isLogical: false,
+                explanation: "<strong>Nicht sinnvoll!</strong> Wenn der Chef in Top-Laune ist und Geschenke verteilt, sollte man unbedingt fragen. Eine Antwort mit Zwecklosigkeit („Что спрашивать?“) ist hier unlogisch."
+            },
+            {
+                context: "„Der Brief an das Amt wird die fertige Entscheidung ohnehin nicht mehr ändern.“",
+                reaction: "— Что им писать?",
+                isLogical: true,
+                explanation: "<strong>Sinnvoll!</strong> Da der Brief nichts mehr bewirken kann, ist das Schreiben nutzlos. „Что им писать?“ drückt diese Resignation ideal aus."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        // Card Manipulation & Drag State
+        const card = document.getElementById("active-card");
+        const stampSinnvoll = document.getElementById("stamp-sinnvoll");
+        const stampUnlogisch = document.getElementById("stamp-unlogisch");
+
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        const swipeThreshold = 100; // Pixelwert für erfolgreichen Swipe
+
+        function initCardInteraction() {
+            card.addEventListener("pointerdown", onPointerDown);
+            card.addEventListener("pointermove", onPointerMove);
+            card.addEventListener("pointerup", onPointerUp);
+            card.addEventListener("pointercancel", onPointerUp);
+        }
+
+        function onPointerDown(e) {
+            if (isAnswered) return;
+            isDragging = true;
+            startX = e.clientX;
+            card.classList.add("dragging");
+            card.setPointerCapture(e.pointerId);
+        }
+
+        function onPointerMove(e) {
+            if (!isDragging) return;
+            currentX = e.clientX - startX;
+            
+            // Karte drehen und verschieben
+            const rotation = currentX * 0.08;
+            card.style.transform = `translate3d(${currentX}px, 0, 0) rotate(${rotation}deg)`;
+
+            // Stamps deckkraftbasiert einblenden
+            if (currentX > 0) {
+                const opacity = Math.min(currentX / swipeThreshold, 1);
+                stampSinnvoll.style.opacity = opacity;
+                stampUnlogisch.style.opacity = 0;
+            } else {
+                const opacity = Math.min(Math.abs(currentX) / swipeThreshold, 1);
+                stampUnlogisch.style.opacity = opacity;
+                stampSinnvoll.style.opacity = 0;
+            }
+        }
+
+        function onPointerUp(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            card.classList.remove("dragging");
+
+            if (currentX > swipeThreshold) {
+                // Nach rechts gewischt -> Sinnvoll
+                processChoice(true);
+            } else if (currentX < -swipeThreshold) {
+                // Nach links gewischt -> Nicht sinnvoll
+                processChoice(false);
+            } else {
+                // Swipe abgebrochen -> Zurücksetzen
+                card.style.transform = "translate3d(0, 0, 0) rotate(0deg)";
+                stampSinnvoll.style.opacity = 0;
+                stampUnlogisch.style.opacity = 0;
+            }
+        }
+
+        function handleManualChoice(choice) {
+            if (isAnswered) return;
+            
+            // Animierter Swipe-Effekt per Klick
+            card.classList.add("dragging");
+            const targetX = choice ? 400 : -400;
+            const targetRotation = choice ? 30 : -30;
+            
+            if (choice) stampSinnvoll.style.opacity = 1;
+            else stampUnlogisch.style.opacity = 1;
+
+            card.style.transform = `translate3d(${targetX}px, 0, 0) rotate(${targetRotation}deg)`;
+            card.style.opacity = 0;
+
+            setTimeout(() => {
+                processChoice(choice, true);
+            }, 200);
+        }
+
+        function processChoice(userChoice, skippedAnimation = false) {
+            isAnswered = true;
+            const q = questions[currentQuestion];
+            const isCorrect = userChoice === q.isLogical;
+
+            if (isCorrect) {
+                score++;
+            }
+
+            // Wenn durch realen Swipe ausgelöst, flieg die Karte ganz raus
+            if (!skippedAnimation) {
+                card.style.transition = "transform 0.4s ease, opacity 0.4s ease";
+                const flyX = userChoice ? 500 : -500;
+                card.style.transform = `translate3d(${flyX}px, 0, 0) rotate(${userChoice ? 45 : -45}deg)`;
+                card.style.opacity = 0;
+            }
+
+            // Zeige Feedback und Erklärung
+            setTimeout(() => {
+                showExplanation(isCorrect, q.explanation);
+            }, skippedAnimation ? 0 : 200);
+        }
+
+        function showExplanation(isCorrect, explanationText) {
+            const overlay = document.getElementById("explanation-overlay");
+            const icon = document.getElementById("explanation-icon");
+            const title = document.getElementById("explanation-title");
+            const desc = document.getElementById("explanation-desc");
+
+            overlay.classList.remove("hidden");
+
+            if (isCorrect) {
+                overlay.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "check_circle";
+                icon.className = "material-icons text-emerald-600 text-2xl";
+                title.innerText = "Korrekt eingeschätzt!";
+                title.className = "font-bold text-sm md:text-base text-emerald-900";
+            } else {
+                overlay.className = "bg-rose-50 border border-rose-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "error";
+                icon.className = "material-icons text-rose-600 text-2xl";
+                title.innerText = "Falsch gedeutet.";
+                title.className = "font-bold text-sm md:text-base text-rose-900";
+            }
+
+            desc.innerHTML = explanationText;
+        }
+
+        function loadNextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                // Setze UI und nächste Karte auf Startzustand zurück
+                isAnswered = false;
+                document.getElementById("explanation-overlay").classList.add("hidden");
+                
+                // Fortschritt aktualisieren
+                document.getElementById("progress-text").innerText = `Frage ${currentQuestion + 1} von ${questions.length}`;
+                document.getElementById("progress-bar").style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+
+                // Karteninhalte laden
+                const q = questions[currentQuestion];
+                document.getElementById("context-text").innerHTML = q.context;
+                document.getElementById("reaction-text").innerHTML = q.reaction;
+
+                // Karte wieder reinfliegen lassen
+                card.style.transition = "none";
+                card.style.transform = "translate3d(0, 0, 0) rotate(0deg)";
+                card.style.opacity = 1;
+                stampSinnvoll.style.opacity = 0;
+                stampUnlogisch.style.opacity = 0;
+                
+                // Erzwinge Reflow
+                card.offsetHeight; 
+                card.style.transition = "";
+            } else {
+                // Quiz abgeschlossen
+                document.getElementById("game-area").classList.add("hidden");
+                document.getElementById("score-area").classList.remove("hidden");
+                document.getElementById("score-text").innerText = `${score} von ${questions.length} richtig`;
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            isAnswered = false;
+
+            document.getElementById("score-area").classList.add("hidden");
+            document.getElementById("game-area").classList.remove("hidden");
+            document.getElementById("explanation-overlay").classList.add("hidden");
+
+            // Erste Frage neu laden
+            const q = questions[0];
+            document.getElementById("context-text").innerHTML = q.context;
+            document.getElementById("reaction-text").innerHTML = q.reaction;
+
+            document.getElementById("progress-text").innerText = `Frage 1 von ${questions.length}`;
+            document.getElementById("progress-bar").style.width = `${(1 / questions.length) * 100}%`;
+
+            card.style.transition = "none";
+            card.style.transform = "translate3d(0, 0, 0) rotate(0deg)";
+            card.style.opacity = 1;
+            stampSinnvoll.style.opacity = 0;
+            stampUnlogisch.style.opacity = 0;
+        }
+
+        // Init beim Laden der Seite
+        window.onload = function() {
+            restartQuiz();
+            initCardInteraction();
+        };
+    </script>
+</body>
+</html>
