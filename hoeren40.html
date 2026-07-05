@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Intonation & Hörverstehen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Sanfte Pulse-Animation für den aktiven Abspiel-Zustand */
+        @keyframes wave-pulse {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+        .animate-wave {
+            animation: wave-pulse 1.2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 md:p-8 no-select">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 md:p-8 transition-all duration-300">
+        
+        <!-- Spiel-Bereich -->
+        <div id="game-area">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Aufgabe 7: Hörverstehen</span>
+                <span id="progress-text" class="text-sm font-medium text-slate-500">Frage 1 von 4</span>
+            </div>
+            
+            <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 25%"></div>
+            </div>
+
+            <h1 class="text-xl md:text-2xl font-bold text-slate-900 mb-2">Erkenne die richtige Sprechmelodie</h1>
+            <p class="text-slate-600 text-sm md:text-base mb-6">
+                Lies die Situation. Höre dir beide Aufnahmen an. Welche Aufnahme klingt nach der **resignierten, abwertenden Sprechmelodie** („Es bringt doch eh nichts!“)?
+            </p>
+
+            <!-- Situation / Kontext -->
+            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl mb-6">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 block mb-1">Situation:</span>
+                <p id="context-text" class="text-slate-700 text-sm md:text-base font-medium"></p>
+            </div>
+
+            <!-- Russischer Satz im Fokus -->
+            <div class="bg-slate-950 text-white rounded-2xl p-5 text-center mb-6 shadow-md relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-xl"></div>
+                <span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1 block">Satz:</span>
+                <div id="russian-sentence" class="text-2xl md:text-3xl font-bold tracking-wide text-indigo-300"></div>
+            </div>
+
+            <!-- Die beiden Audio-Optionen -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <!-- Player 1 -->
+                <div id="player-card-1" class="border-2 border-slate-200 hover:border-indigo-300 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-bold text-slate-700">Aufnahme 1</span>
+                        <span id="status-badge-1" class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Bereit</span>
+                    </div>
+                    
+                    <!-- Visualisierte Waveform -->
+                    <div class="h-12 flex items-center justify-center gap-1 bg-slate-50 rounded-lg p-2 mb-4 overflow-hidden">
+                        <div class="w-1 h-4 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.1s"></div>
+                        <div class="w-1 h-8 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.2s"></div>
+                        <div class="w-1 h-10 bg-indigo-500 rounded-full wave-bar" style="animation-delay: 0.3s"></div>
+                        <div class="w-1 h-6 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.4s"></div>
+                        <div class="w-1 h-3 bg-indigo-300 rounded-full wave-bar" style="animation-delay: 0.5s"></div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="playMelody(0)" class="flex-1 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-all">
+                            <span class="material-icons text-base">play_arrow</span>
+                            <span>Anhören</span>
+                        </button>
+                        <button id="select-btn-1" onclick="selectAnswer(0)" class="flex-1 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold py-2.5 rounded-lg text-sm transition-all">
+                            Auswählen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Player 2 -->
+                <div id="player-card-2" class="border-2 border-slate-200 hover:border-indigo-300 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-bold text-slate-700">Aufnahme 2</span>
+                        <span id="status-badge-2" class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Bereit</span>
+                    </div>
+                    
+                    <!-- Visualisierte Waveform -->
+                    <div class="h-12 flex items-center justify-center gap-1 bg-slate-50 rounded-lg p-2 mb-4 overflow-hidden">
+                        <div class="w-1 h-4 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.5s"></div>
+                        <div class="w-1 h-6 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.4s"></div>
+                        <div class="w-1 h-10 bg-indigo-500 rounded-full wave-bar" style="animation-delay: 0.3s"></div>
+                        <div class="w-1 h-8 bg-indigo-400 rounded-full wave-bar" style="animation-delay: 0.2s"></div>
+                        <div class="w-1 h-3 bg-indigo-300 rounded-full wave-bar" style="animation-delay: 0.1s"></div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="playMelody(1)" class="flex-1 flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-all">
+                            <span class="material-icons text-base">play_arrow</span>
+                            <span>Anhören</span>
+                        </button>
+                        <button id="select-btn-2" onclick="selectAnswer(1)" class="flex-1 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold py-2.5 rounded-lg text-sm transition-all">
+                            Auswählen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback-Erklärung -->
+            <div id="feedback-overlay" class="hidden rounded-xl p-5 mb-6 transition-all duration-300">
+                <div class="flex items-start gap-3">
+                    <span id="feedback-icon" class="material-icons text-2xl"></span>
+                    <div>
+                        <h4 id="feedback-title" class="font-bold text-sm md:text-base"></h4>
+                        <p id="feedback-desc" class="text-xs md:text-sm mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="next-button" onclick="loadNextQuestion()" class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all duration-200 active:scale-95">
+                        <span>Weiter</span>
+                        <span class="material-icons text-sm">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ergebnis-Bereich -->
+        <div id="score-area" class="hidden text-center py-6">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-icons text-4xl">emoji_events</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Hörverstehen abgeschlossen! 🎉</h2>
+            <p class="text-slate-600 max-w-md mx-auto mb-6">
+                Hervorragend! Du kannst die genervte, rhetorische Sprechmelodie (IK-2 / fallender Tonfall) jetzt perfekt von echten Informationsfragen unterscheiden.
+            </p>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 max-w-sm mx-auto mb-8">
+                <span class="text-xs font-bold uppercase tracking-widest text-indigo-500 block mb-1">Dein Score:</span>
+                <span id="score-text" class="text-3xl font-extrabold text-indigo-900">0 von 4 richtig</span>
+            </div>
+            <button onclick="restartQuiz()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl mx-auto transition-all duration-200 active:scale-95">
+                <span class="material-icons text-lg">replay</span>
+                <span>Neustart</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Strukturierte Hörverstehensfragen
+        const questions = [
+            {
+                context: "In der Poliklinik hebt um diese Uhrzeit sowieso niemand ab. Dein Freund schlägt vor, dort anzurufen, doch du hälst das für völlig sinnlos.",
+                sentence: "Что туда звонить?",
+                // 0 = Aufnahme 1, 1 = Aufnahme 2
+                // Wir mischen die melodischen Profile (IK-2 = resigned/rhetorical, IK-3 = genuine/rising)
+                profiles: [
+                    { type: "genuine", description: "Melodie steigt am Ende neugierig an (Echte Frage: „Was soll man dorthin rufen?“)" },
+                    { type: "resigned", description: "Melodie fällt schwer ab, klingt leicht genervt und matt (Zwecklosigkeit)." }
+                ],
+                correctIndex: 1, // Die resigned-Variante ist hier am Index 1
+                explanation: "<strong>Richtig!</strong> Die abfallende, monotone Sprechmelodie drückt im Russischen Frustration und absolute Zwecklosigkeit aus. Eine ansteigende Melodie würde wie eine echte Informationsfrage klingen."
+            },
+            {
+                context: "Ihr werdet euch bei dieser hitzigen Diskussion niemals einig werden. Ein weiterer Streit ist reine Zeitverschwendung.",
+                sentence: "Что тут спорить?",
+                profiles: [
+                    { type: "resigned", description: "Melodie fällt schwer ab, klingt matt und resigniert (Zwecklosigkeit)." },
+                    { type: "genuine", description: "Melodie steigt am Ende neugierig an (Echte Frage: „Worüber streitet man hier?“)" }
+                ],
+                correctIndex: 0, // Hier liegt die resigned-Variante auf Index 0
+                explanation: "<strong>Perfekt!</strong> Die schwer abfallende Intonation signalisiert deinem Gegenüber sofort: Jede weitere Silbe ist hier verschwendete Energie."
+            },
+            {
+                context: "Der Brief an das Amt wird die fertige Entscheidung ohnehin nicht mehr ändern. Es ist komplett überflüssig, ihnen zu schreiben.",
+                sentence: "Что им писать?",
+                profiles: [
+                    { type: "genuine", description: "Melodie steigt am Ende neugierig an (Echte Frage)." },
+                    { type: "resigned", description: "Melodie fällt schwer ab, klingt resigniert und lustlos (Zwecklosigkeit)." }
+                ],
+                correctIndex: 1,
+                explanation: "<strong>Richtig gehört!</strong> Durch den seufzenden, abfallenden Tonfall verneinst du sofort die Sinnhaftigkeit des Schreibens."
+            },
+            {
+                context: "Der Chef hat heute extrem schlechte Laune und wird ohnehin jeden Antrag sofort ablehnen. Ihn jetzt zu fragen bringt absolut gar nichts.",
+                sentence: "Что у него спрашивать?",
+                profiles: [
+                    { type: "resigned", description: "Melodie fällt schwer ab, klingt leicht genervt (Zwecklosigkeit)." },
+                    { type: "genuine", description: "Melodie steigt am Ende neugierig an (Echte Frage)." }
+                ],
+                correctIndex: 0,
+                explanation: "<strong>Großartig!</strong> Du hast den typisch resignierten Unterton sofort herausgehört. So klingen russische Muttersprachler im Alltag."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let isAnswered = false;
+        let audioCtx = null;
+
+        // Initialisiert die Web Audio API beim ersten Klick
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Synthetisiert eine russische Sprechmelodie-Kurve
+        function playMelody(playerIndex) {
+            initAudioContext();
+            
+            const q = questions[currentQuestion];
+            const profile = q.profiles[playerIndex];
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // Angenehmer, vokalähnlicher Sägezahn/Dreieck-Mix
+            osc.type = "triangle"; 
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+
+            const now = audioCtx.currentTime;
+            
+            // Drei stilisierte Silben simulieren ("Chto - tu - da")
+            // Silbe 1 (Что)
+            osc.frequency.setValueAtTime(140, now);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, now + 0.25);
+            
+            // Silbe 2 (ту)
+            osc.frequency.setValueAtTime(140, now + 0.3);
+            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.4);
+            gainNode.gain.linearRampToValueAtTime(0, now + 0.55);
+
+            // Silbe 3 (да - betontes Ende)
+            if (profile.type === "genuine") {
+                // IK-3: Stark ansteigender, neugieriger Tonfall
+                osc.frequency.setValueAtTime(140, now + 0.6);
+                osc.frequency.exponentialRampToValueAtTime(260, now + 1.0); // Starker Anstieg am Ende
+                gainNode.gain.linearRampToValueAtTime(0.18, now + 0.7);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.1);
+            } else {
+                // IK-2: Resignierter, monoton fallender Tonfall (sigh/resignation)
+                osc.frequency.setValueAtTime(150, now + 0.6);
+                osc.frequency.linearRampToValueAtTime(100, now + 1.0); // Deutlicher Abfall nach unten
+                gainNode.gain.linearRampToValueAtTime(0.18, now + 0.7);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.1);
+            }
+
+            osc.start(now);
+            osc.stop(now + 1.2);
+
+            // Animation der Waveforms starten
+            triggerWaveformAnimation(playerIndex);
+        }
+
+        function triggerWaveformAnimation(playerIndex) {
+            const cardId = playerIndex === 0 ? "player-card-1" : "player-card-2";
+            const badgeId = playerIndex === 0 ? "status-badge-1" : "status-badge-2";
+            const card = document.getElementById(cardId);
+            const badge = document.getElementById(badgeId);
+            const bars = card.querySelectorAll(".wave-bar");
+
+            // Visuelles Feedback
+            badge.innerText = "Spielt...";
+            badge.className = "text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full";
+            card.classList.add("border-indigo-500", "shadow-md");
+
+            bars.forEach(bar => {
+                bar.classList.add("animate-wave");
+            });
+
+            setTimeout(() => {
+                badge.innerText = "Bereit";
+                badge.className = "text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full";
+                card.classList.remove("border-indigo-500", "shadow-md");
+                bars.forEach(bar => {
+                    bar.classList.remove("animate-wave");
+                });
+            }, 1200);
+        }
+
+        function initQuestion() {
+            isAnswered = false;
+            
+            // Feedback-Box zurücksetzen
+            document.getElementById("feedback-overlay").classList.add("hidden");
+
+            const q = questions[currentQuestion];
+
+            // Texte einsetzen
+            document.getElementById("progress-text").innerText = `Frage ${currentQuestion + 1} von ${questions.length}`;
+            document.getElementById("progress-bar").style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+            document.getElementById("context-text").innerHTML = q.context;
+            document.getElementById("russian-sentence").innerText = q.sentence;
+
+            // Buttons zurücksetzen
+            const selectBtn1 = document.getElementById("select-btn-1");
+            const selectBtn2 = document.getElementById("select-btn-2");
+            const card1 = document.getElementById("player-card-1");
+            const card2 = document.getElementById("player-card-2");
+
+            selectBtn1.disabled = false;
+            selectBtn2.disabled = false;
+            selectBtn1.className = "flex-1 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold py-2.5 rounded-lg text-sm transition-all";
+            selectBtn2.className = "flex-1 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold py-2.5 rounded-lg text-sm transition-all";
+            card1.className = "border-2 border-slate-200 hover:border-indigo-300 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-white";
+            card2.className = "border-2 border-slate-200 hover:border-indigo-300 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-white";
+        }
+
+        function selectAnswer(playerIndex) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const q = questions[currentQuestion];
+            const isCorrect = playerIndex === q.correctIndex;
+
+            const selectBtn1 = document.getElementById("select-btn-1");
+            const selectBtn2 = document.getElementById("select-btn-2");
+            const card1 = document.getElementById("player-card-1");
+            const card2 = document.getElementById("player-card-2");
+
+            selectBtn1.disabled = true;
+            selectBtn2.disabled = true;
+
+            if (isCorrect) {
+                score++;
+                const selectedCard = playerIndex === 0 ? card1 : card2;
+                const selectedBtn = playerIndex === 0 ? selectBtn1 : selectBtn2;
+                
+                selectedCard.className = "border-2 border-emerald-500 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-emerald-50/50";
+                selectedBtn.className = "flex-1 bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-all cursor-default";
+                selectedBtn.innerText = "Richtig!";
+                
+                showFeedback(true, q.explanation);
+            } else {
+                const selectedCard = playerIndex === 0 ? card1 : card2;
+                const selectedBtn = playerIndex === 0 ? selectBtn1 : selectBtn2;
+                
+                selectedCard.className = "border-2 border-rose-500 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-rose-50/50";
+                selectedBtn.className = "flex-1 bg-rose-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-all cursor-default";
+                selectedBtn.innerText = "Falsch";
+
+                // Zeige korrekte Karte an
+                const correctCard = q.correctIndex === 0 ? card1 : card2;
+                correctCard.className = "border-2 border-emerald-500 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 bg-white shadow-sm";
+
+                const wrongExplanation = `<strong>Leider falsch.</strong> Das war die neugierige Melodie. Die resigned-Sprechmelodie sinkt am Satzende müde ab.`;
+                showFeedback(false, wrongExplanation);
+            }
+        }
+
+        function showFeedback(isCorrect, text) {
+            const overlay = document.getElementById("feedback-overlay");
+            const icon = document.getElementById("feedback-icon");
+            const title = document.getElementById("feedback-title");
+            const desc = document.getElementById("feedback-desc");
+
+            overlay.classList.remove("hidden");
+
+            if (isCorrect) {
+                overlay.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "check_circle";
+                icon.className = "material-icons text-emerald-600 text-2xl";
+                title.innerText = "Exzellentes Hörverstehen!";
+                title.className = "font-bold text-sm md:text-base text-emerald-900";
+            } else {
+                overlay.className = "bg-rose-50 border border-rose-200 rounded-xl p-5 mb-6 animate-[fadeIn_0.3s_ease-out_forwards]";
+                icon.innerText = "error";
+                icon.className = "material-icons text-rose-600 text-2xl";
+                title.innerText = "Sprechmelodie verwechselt.";
+                title.className = "font-bold text-sm md:text-base text-rose-900";
+            }
+
+            desc.innerHTML = text;
+        }
+
+        function loadNextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                initQuestion();
+            } else {
+                // Quiz beendet
+                document.getElementById("game-area").classList.add("hidden");
+                document.getElementById("score-area").classList.remove("hidden");
+                document.getElementById("score-text").innerText = `${score} von ${questions.length} richtig`;
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById("score-area").classList.add("hidden");
+            document.getElementById("game-area").classList.remove("hidden");
+            initQuestion();
+        }
+
+        // Erster Aufruf
+        window.onload = function() {
+            initQuestion();
+        };
+    </script>
+</body>
+</html>
