@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Deutsch Lernkartei</title>
+    <!-- Tailwind CSS CDN für das moderne Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* 3D-Kartenwende-Effekte */
+        .perspective {
+            perspective: 1200px;
+        }
+        .card-inner {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        /* Schöne Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f8f5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a7f3d0;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #34d399;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 min-h-screen flex flex-col justify-between py-6 px-4 text-slate-800 selection:bg-emerald-200">
+
+    <!-- Header-Bereich -->
+    <header class="max-w-xl w-full mx-auto text-center mb-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold uppercase tracking-wider mb-2">
+            <span class="material-icons text-sm">school</span> Russisch Vokabeltrainer
+        </div>
+        <h1 class="text-3xl font-extrabold text-emerald-900 tracking-tight">Interaktive Lernkartei</h1>
+        <p class="text-sm text-emerald-700/80 mt-1">Umgangssprachliche Abweisungen & Grundwortschatz</p>
+    </header>
+
+    <!-- Hauptbereich -->
+    <main class="max-w-xl w-full mx-auto flex-1 flex flex-col justify-center gap-6">
+
+        <!-- Oben: Steuerung & Modus-Auswahl -->
+        <div class="bg-white/80 backdrop-blur rounded-2xl p-4 shadow-sm border border-emerald-100/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <!-- Richtungsschalter -->
+            <div class="flex items-center gap-2.5">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Richtung:</span>
+                <button id="toggle-direction-btn" onclick="toggleDirection()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-all border border-emerald-200/50">
+                    <span class="material-icons text-sm" id="direction-icon">swap_horiz</span>
+                    <span id="direction-text">Russisch ➔ Deutsch</span>
+                </button>
+            </div>
+
+            <!-- Schnell-Buttons -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="shuffleDeck()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold transition-all shadow-md active:scale-95" title="Kartenstapel mischen">
+                    <span class="material-icons text-sm">shuffle</span>
+                    <span>Mischen</span>
+                </button>
+                <button onclick="resetToBeginning()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-bold transition-all active:scale-95 border border-slate-200/50" title="Zur ersten Karte zurückspringen">
+                    <span class="material-icons text-sm">first_page</span>
+                    <span>Anfang</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mitte: Der Flashcard-Bereich (3D) -->
+        <div class="perspective w-full h-[22rem] sm:h-[20rem] relative">
+            
+            <div id="flashcard" onclick="flipCard()" class="card-inner w-full h-full relative cursor-pointer group" tabindex="0">
+                
+                <!-- VORDERSEITE -->
+                <div class="card-face absolute inset-0 w-full h-full bg-white rounded-3xl p-6 shadow-lg hover:shadow-xl border border-emerald-100 flex flex-col justify-between transition-all group-hover:border-emerald-300">
+                    
+                    <!-- Header der Kartenvorderseite -->
+                    <div class="flex items-center justify-between border-b border-emerald-50 pb-3 w-full">
+                        <span id="badge-front" class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">Russisch</span>
+                        <div class="flex items-center gap-2">
+                            <!-- Audio-Button auf der russischen Seite -->
+                            <button id="tts-btn-front" onclick="speakRussian(event)" class="w-8 h-8 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 flex items-center justify-center transition-all opacity-100 cursor-pointer" title="Aussprache anhören">
+                                <span class="material-icons text-lg">volume_up</span>
+                            </button>
+                            <span id="card-nr-front" class="text-xs font-bold text-slate-400 font-mono">1/58</span>
+                        </div>
+                    </div>
+
+                    <!-- Haupt-Vokabeltext Vorderseite -->
+                    <div class="flex-1 flex flex-col justify-center items-center py-4 text-center">
+                        <p id="text-front" class="font-extrabold tracking-wide text-slate-900 leading-tight">Загрузка...</p>
+                        <p id="sub-front" class="text-xs text-slate-400 mt-2 italic font-semibold"></p>
+                    </div>
+
+                    <!-- Footer Vorderseite -->
+                    <div class="flex items-center justify-center pt-2 border-t border-emerald-50 text-[11px] text-emerald-500/80 font-medium">
+                        <span class="material-icons text-sm mr-1 animate-pulse">touch_app</span> Zum Umdrehen klicken oder Leertaste drücken
+                    </div>
+                </div>
+
+                <!-- RÜCKSEITE -->
+                <div class="card-back card-face absolute inset-0 w-full h-full bg-gradient-to-tr from-white to-emerald-50/20 rounded-3xl p-6 shadow-lg hover:shadow-xl border-2 border-emerald-500 flex flex-col justify-between transition-all">
+                    
+                    <!-- Header der Kartenrückseite -->
+                    <div class="flex items-center justify-between border-b border-emerald-100 pb-3 w-full">
+                        <span id="badge-back" class="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Deutsch</span>
+                        <div class="flex items-center gap-2">
+                            <button id="tts-btn-back" onclick="speakRussian(event)" class="w-8 h-8 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 flex items-center justify-center transition-all opacity-0 pointer-events-none cursor-pointer" title="Aussprache anhören">
+                                <span class="material-icons text-lg">volume_up</span>
+                            </button>
+                            <span id="card-nr-back" class="text-xs font-bold text-slate-400 font-mono">1/58</span>
+                        </div>
+                    </div>
+
+                    <!-- Haupt-Vokabeltext Rückseite -->
+                    <div class="flex-1 flex flex-col justify-center items-center py-4 text-center">
+                        <p id="text-back" class="font-bold tracking-normal text-emerald-900 leading-normal">Laden...</p>
+                        <p id="sub-back" class="text-xs text-slate-400 mt-2 italic font-semibold"></p>
+                    </div>
+
+                    <!-- Footer Rückseite -->
+                    <div class="flex items-center justify-center pt-2 border-t border-emerald-100 text-[11px] text-emerald-600 font-medium">
+                        <span class="material-icons text-sm mr-1">check_circle_outline</span> Richtig gewusst?
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Unten: Fortschrittsanzeige & Haupt-Navigation -->
+        <div class="space-y-4">
+            <!-- Fortschritts-Leiste -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-xs font-bold text-emerald-800">
+                    <span class="flex items-center gap-1"><span class="material-icons text-xs">trending_flat</span> Fortschritt</span>
+                    <span id="progress-indicator" class="font-mono">1 / 58</span>
+                </div>
+                <div class="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden border border-emerald-200/40">
+                    <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-full rounded-full transition-all duration-300" style="width: 1.7%"></div>
+                </div>
+            </div>
+
+            <!-- Navigations-Schaltflächen -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="prevCard()" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 font-bold transition-all shadow-sm border border-emerald-200/50 active:scale-95" title="Vorherige Karte (Pfeiltaste links)">
+                    <span class="material-icons">arrow_back</span>
+                    <span>Vorherige</span>
+                </button>
+                <button onclick="nextCard()" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-md active:scale-95" title="Nächste Karte (Pfeiltaste rechts)">
+                    <span>Nächste</span>
+                    <span class="material-icons">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Tastatur-Legende / Footer -->
+    <footer class="max-w-xl w-full mx-auto text-center mt-6 pt-4 border-t border-emerald-100/50">
+        <div class="inline-flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-emerald-700/60 font-semibold bg-white/40 backdrop-blur-sm py-2 px-4 rounded-xl border border-emerald-100/30">
+            <span class="flex items-center gap-1"><kbd class="bg-white border border-emerald-200 px-1 rounded shadow-sm">Leertaste / Enter</kbd> Umdrehen</span>
+            <span class="flex items-center gap-1"><kbd class="bg-white border border-emerald-200 px-1 rounded shadow-sm">←</kbd> <kbd class="bg-white border border-emerald-200 px-1 rounded shadow-sm">→</kbd> Navigieren</span>
+            <span class="flex items-center gap-1"><kbd class="bg-white border border-emerald-200 px-1 rounded shadow-sm">Pos1 / Home</kbd> Anfang</span>
+        </div>
+    </footer>
+
+    <!-- JavaScript-Logik -->
+    <script>
+        // Vollständige 58 Vokabeln aus der Vorlage
+        const flashcardsData = [
+            { ru: "звони́ть / позвони́ть", de: "anrufen", type: "Verbenpaar" },
+            { ru: "спо́рить / поспо́рить", de: "streiten, debattieren; wetten", type: "Verbenpaar" },
+            { ru: "писа́ть / написа́ть", de: "schreiben", type: "Verbenpaar" },
+            { ru: "спра́шивать / спроси́ть", de: "fragen", type: "Verbenpaar" },
+            { ru: "обсужда́ть / обсуди́ть", de: "besprechen, diskutieren", type: "Verbenpaar" },
+            { ru: "объясня́ть / объясни́ть", de: "erklären", type: "Verbenpaar" },
+            { ru: "отвеча́ть / отве́тить", de: "antworten", type: "Verbenpaar" },
+            { ru: "рабо́тать / порабо́тать", de: "arbeiten", type: "Verbenpaar" },
+            { ru: "прои́грывать / проигра́ть", de: "verlieren", type: "Verbenpaar" },
+            { ru: "вы́игрывать / вы́играть", de: "gewinnen", type: "Verbenpaar" },
+            { ru: "иска́ть / поиска́ть", de: "suchen", type: "Verbenpaar" },
+            { ru: "реша́ть / реши́ть", de: "entscheiden; lösen", type: "Verbenpaar" },
+            { ru: "жа́ловаться / пожа́ловаться", de: "sich beschweren", type: "Verbenpaar" },
+            { ru: "изменя́ть / измени́ть", de: "ändern, verändern", type: "Verbenpaar" },
+            { ru: "продолжа́ть / продолжи́ть", de: "fortsetzen, weitermachen", type: "Verbenpaar" },
+            { ru: "остава́ться / оста́ться", de: "bleiben", type: "Verbenpaar" },
+            { ru: "догова́риваться / договори́ться", de: "sich absprechen, vereinbaren", type: "Verbenpaar" },
+            { ru: "уходи́ть / уйти́", de: "weggehen, verlassen", type: "Verbenpaar" },
+            { ru: "сдава́ть / сдать", de: "ablegen, bestehen (z. B. Prüfung)", type: "Verbenpaar" },
+            { ru: "что", de: "was; (hier umgangssprachlich:) was bringt es, warum überhaupt?", type: "" },
+            { ru: "туда́", de: "dorthin", type: "" },
+            { ru: "тут", de: "hier", type: "" },
+            { ru: "им", de: "ihnen", type: "" },
+            { ru: "у", de: "bei, von", type: "" },
+            { ru: "него́", de: "ihm, seiner", type: "" },
+            { ru: "всё равно́", de: "sowieso, egal", type: "" },
+            { ru: "никто́", de: "niemand", type: "" },
+            { ru: "поликли́ника", de: "Poliklinik, Ärztehaus", type: "" },
+            { ru: "обе́д", de: "Mittagessen, Mittagspause", type: "" },
+            { ru: "письмо́", de: "Brief, E-Mail", type: "" },
+            { ru: "шеф", de: "Chef", type: "" },
+            { ru: "насчёт", de: "wegen, bezüglich", type: "" },
+            { ru: "о́тпуск", de: "Urlaub", type: "" },
+            { ru: "по́чта", de: "Post, E-Mail", type: "" },
+            { ru: "жа́лоба", de: "Beschwerde", type: "" },
+            { ru: "ве́домство", de: "Behörde, Amt", type: "" },
+            { ru: "реше́ние", de: "Entscheidung", type: "" },
+            { ru: "спор", de: "Streit, Debatte", type: "" },
+            { ru: "вре́мя", de: "Zeit", type: "" },
+            { ru: "час", de: "Stunde", type: "" },
+            { ru: "ключ", de: "Schlüssel", type: "" },
+            { ru: "кварти́ра", de: "Wohnung", type: "" },
+            { ru: "матч", de: "Spiel, Match", type: "" },
+            { ru: "уже́", de: "schon, bereits", type: "" },
+            { ru: "сейча́с", de: "jetzt", type: "" },
+            { ru: "сего́дня", de: "heute", type: "" },
+            { ru: "о́чень", de: "sehr", type: "" },
+            { ru: "злой", de: "böse, wütend, zornig", type: "" },
+            { ru: "хоро́ший", de: "gut, angenehm", type: "" },
+            { ru: "настрое́ние", de: "Laune, Stimmung", type: "" },
+            { ru: "ка́ждый", de: "jeder", type: "" },
+            { ru: "свой", de: "sein, eigen", type: "" },
+            { ru: "мне́ние", de: "Meinung", type: "" },
+            { ru: "экза́мен", de: "Prüfung", type: "" },
+            { ru: "сро́чно", de: "dringend", type: "" },
+            { ru: "на́ши", de: "unsere Mannschaft, die Unseren", type: "" },
+            { ru: "Анто́н", de: "Anton", type: "" },
+            { ru: "Андре́й", de: "Andrej", type: "" }
+        ];
+
+        // Status-Variablen
+        let currentDeck = [...flashcardsData];
+        let currentIndex = 0;
+        let isFlipped = false;
+        let directionRUtoDE = true; // true = Russisch auf Vorderseite, false = Deutsch auf Vorderseite
+
+        // HTML Elemente
+        const cardElement = document.getElementById("flashcard");
+        const textFront = document.getElementById("text-front");
+        const subFront = document.getElementById("sub-front");
+        const textBack = document.getElementById("text-back");
+        const subBack = document.getElementById("sub-back");
+        const badgeFront = document.getElementById("badge-front");
+        const badgeBack = document.getElementById("badge-back");
+        const cardNrFront = document.getElementById("card-nr-front");
+        const cardNrBack = document.getElementById("card-nr-back");
+        const progressIndicator = document.getElementById("progress-indicator");
+        const progressBar = document.getElementById("progress-bar");
+        const directionText = document.getElementById("direction-text");
+        const ttsBtnFront = document.getElementById("tts-btn-front");
+        const ttsBtnBack = document.getElementById("tts-btn-back");
+
+        // Starten
+        updateUI();
+
+        // 1. Karte umdrehen
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardElement.classList.add("is-flipped");
+            } else {
+                cardElement.classList.remove("is-flipped");
+            }
+        }
+
+        // 2. Navigation: Nächste Karte
+        function nextCard() {
+            if (currentDeck.length === 0) return;
+            isFlipped = false;
+            cardElement.classList.remove("is-flipped");
+            
+            // Erst Karte drehen, nach halber Zeit die Daten austauschen (verhindert Textblinken)
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % currentDeck.length;
+                updateUI();
+            }, 150);
+        }
+
+        // 2. Navigation: Vorherige Karte
+        function prevCard() {
+            if (currentDeck.length === 0) return;
+            isFlipped = false;
+            cardElement.classList.remove("is-flipped");
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex - 1 + currentDeck.length) % currentDeck.length;
+                updateUI();
+            }, 150);
+        }
+
+        // 3. Stapel mischen (Fisher-Yates)
+        function shuffleDeck() {
+            isFlipped = false;
+            cardElement.classList.remove("is-flipped");
+
+            setTimeout(() => {
+                // Kopieren und mischen
+                let shuffled = [...flashcardsData];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                currentDeck = shuffled;
+                currentIndex = 0;
+                updateUI();
+                showTemporaryMessage("Mischen", "Karten erfolgreich gemischt!");
+            }, 150);
+        }
+
+        // 4. Zurück zum Anfang
+        function resetToBeginning() {
+            isFlipped = false;
+            cardElement.classList.remove("is-flipped");
+            
+            setTimeout(() => {
+                currentIndex = 0;
+                updateUI();
+            }, 150);
+        }
+
+        // Richtung wechseln (Lernmodus)
+        function toggleDirection() {
+            directionRUtoDE = !directionRUtoDE;
+            
+            isFlipped = false;
+            cardElement.classList.remove("is-flipped");
+
+            if (directionRUtoDE) {
+                directionText.innerText = "Russisch ➔ Deutsch";
+            } else {
+                directionText.innerText = "Deutsch ➔ Russisch";
+            }
+
+            setTimeout(() => {
+                updateUI();
+            }, 150);
+        }
+
+        // UI Aktualisierung
+        function updateUI() {
+            const currentCard = currentDeck[currentIndex];
+            const currentNumber = currentIndex + 1;
+            const totalNumber = currentDeck.length;
+
+            // Richtungabhängige Zuweisung
+            let valFront = "";
+            let valBack = "";
+            let subValFront = "";
+            let subValBack = "";
+
+            if (directionRUtoDE) {
+                // Russisch auf der Vorderseite
+                valFront = currentCard.ru;
+                subValFront = currentCard.type ? currentCard.type : "";
+                badgeFront.innerText = "Russisch";
+                badgeFront.className = "text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg";
+                
+                ttsBtnFront.classList.remove("opacity-0", "pointer-events-none");
+                ttsBtnFront.classList.add("opacity-100");
+
+                valBack = currentCard.de;
+                subValBack = "";
+                badgeBack.innerText = "Deutsch";
+                badgeBack.className = "text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg";
+
+                ttsBtnBack.classList.remove("opacity-100");
+                ttsBtnBack.classList.add("opacity-0", "pointer-events-none");
+            } else {
+                // Deutsch auf der Vorderseite
+                valFront = currentCard.de;
+                subValFront = "";
+                badgeFront.innerText = "Deutsch";
+                badgeFront.className = "text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg";
+
+                ttsBtnFront.classList.remove("opacity-100");
+                ttsBtnFront.classList.add("opacity-0", "pointer-events-none");
+
+                valBack = currentCard.ru;
+                subValBack = currentCard.type ? currentCard.type : "";
+                badgeBack.innerText = "Russisch";
+                badgeBack.className = "text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg";
+
+                ttsBtnBack.classList.remove("opacity-0", "pointer-events-none");
+                ttsBtnBack.classList.add("opacity-100");
+            }
+
+            // Texte setzen
+            textFront.innerText = valFront;
+            subFront.innerText = subValFront;
+            textBack.innerText = valBack;
+            subBack.innerText = subValBack;
+
+            // Dynamische Schriftgrößenanpassung
+            adjustFontSize(valFront, textFront);
+            adjustFontSize(valBack, textBack);
+
+            // Zähler & Progress
+            cardNrFront.innerText = `${currentNumber}/${totalNumber}`;
+            cardNrBack.innerText = `${currentNumber}/${totalNumber}`;
+            progressIndicator.innerText = `${currentNumber} / ${totalNumber}`;
+
+            const percent = (currentNumber / totalNumber) * 100;
+            progressBar.style.width = `${percent}%`;
+        }
+
+        // Dynamische Schriftgrößen-Regulierung gegen Überlauf
+        function adjustFontSize(text, element) {
+            const length = text.length;
+            element.className = "font-bold tracking-normal leading-normal transition-all duration-300";
+            
+            if (length > 30) {
+                element.className += " text-lg md:text-xl text-slate-800";
+            } else if (length > 20) {
+                element.className += " text-xl md:text-2xl text-slate-800";
+            } else if (length > 12) {
+                element.className += " text-2xl md:text-3xl text-slate-900";
+            } else {
+                element.className += " text-3xl md:text-4xl text-slate-900 font-extrabold";
+            }
+        }
+
+        // Russische Sprachausgabe (TTS)
+        function speakRussian(event) {
+            // Verhindert das Auslösen des Card-Flips beim Klicken auf das Sprachsymbol
+            if (event) event.stopPropagation();
+
+            const currentCard = currentDeck[currentIndex];
+            if ('speechSynthesis' in window) {
+                // Laufende Ausgaben abbrechen
+                window.speechSynthesis.cancel();
+                
+                // Betonungszeichen für flüssige Audioausgabe entfernen
+                const cleanRussianText = currentCard.ru.replace(/[́]/g, '');
+
+                const utterance = new SpeechSynthesisUtterance(cleanRussianText);
+                utterance.lang = 'ru-RU';
+                utterance.rate = 0.85; // Leicht langsamer für einfaches Lernen
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Sprachausgabe wird von deinem Browser leider nicht unterstützt.");
+            }
+        }
+
+        // Tastatursteuerung
+        document.addEventListener('keydown', function(event) {
+            // Tastaturinteraktionen nur triggern, wenn kein Eingabefeld aktiv ist
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            if (event.code === 'Space' || event.code === 'Enter') {
+                event.preventDefault(); // Verhindert Scrollen beim Leertaste drücken
+                flipCard();
+            } else if (event.code === 'ArrowLeft') {
+                prevCard();
+            } else if (event.code === 'ArrowRight') {
+                nextCard();
+            } else if (event.code === 'Home') {
+                event.preventDefault();
+                resetToBeginning();
+            }
+        });
+
+        // Schöne temporäre Overlay-Information (z. B. beim Mischen)
+        function showTemporaryMessage(title, text) {
+            const notice = document.createElement("div");
+            notice.className = "fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-slate-700/50 z-50 flex items-center gap-2 animate-[fadeIn_0.2s_ease-out_forwards]";
+            notice.innerHTML = `<span class="material-icons text-emerald-400 text-sm">check_circle</span> <span>${text}</span>`;
+            document.body.appendChild(notice);
+
+            setTimeout(() => {
+                notice.classList.add("opacity-0", "transition-all", "duration-300");
+                setTimeout(() => notice.remove(), 300);
+            }, 1800);
+        }
+    </script>
+</body>
+</html>
