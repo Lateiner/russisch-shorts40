@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch lernen: Chat-Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Messenger Hintergrundmuster-Ersatz */
+        .chat-bg {
+            background-color: #efeae2;
+            background-image: radial-gradient(#dfdcd6 1px, transparent 0), radial-gradient(#dfdcd6 1px, transparent 0);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex items-center justify-center p-4 md:p-6 no-select">
+
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col h-[650px] transition-all duration-300">
+        
+        <!-- Header des simulierten Smartphones -->
+        <div class="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between shadow-md flex-shrink-0 z-10">
+            <div class="flex items-center gap-3">
+                <button onclick="restartQuiz()" class="hover:bg-emerald-700 p-1 rounded-full transition-colors active:scale-95" title="Zurücksetzen">
+                    <span class="material-icons">arrow_back</span>
+                </button>
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                        А
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-emerald-600 rounded-full"></span>
+                </div>
+                <div>
+                    <h2 class="font-bold text-sm">Антон (Anton)</h2>
+                    <span class="text-[10px] text-emerald-100 font-medium">schreibt gerade...</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span id="progress-badge" class="text-xs bg-emerald-700/50 px-2.5 py-1 rounded-full font-bold">Chat 1 von 4</span>
+            </div>
+        </div>
+
+        <!-- Chatverlauf-Bereich -->
+        <div id="chat-window" class="chat-bg flex-1 p-4 overflow-y-auto space-y-4 flex flex-col justify-end">
+            <!-- Dynamischer Chatverlauf wird hier per JS geladen -->
+        </div>
+
+        <!-- Optionen-Eingabebereich am unteren Rand -->
+        <div class="bg-slate-50 border-t border-slate-200 p-3 flex-shrink-0">
+            <div id="choices-heading" class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
+                Wähle die passende russische Antwort:
+            </div>
+            
+            <div id="options-container" class="space-y-2">
+                <!-- Buttons werden dynamisch geladen -->
+            </div>
+
+            <!-- Navigations-Schaltfläche (erscheint nach Auswahl) -->
+            <div id="nav-container" class="hidden mt-2 flex justify-end">
+                <button id="next-button" onclick="loadNextChat()" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-95">
+                    <span id="next-button-text">Nächster Chat</span>
+                    <span class="material-icons text-sm">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const chats = [
+            {
+                // Anton schlägt eine Handlung vor
+                senderTranslation: "Anton: „Schreib dem Chef doch eine E-Mail wegen Urlaub.“",
+                senderMessage: "Напиши шефу письмо насчёт отпуска.",
+                
+                // 3 Antwort-Optionen für den Schüler
+                options: [
+                    {
+                        text: "Что ему написать? Он в отпуске и не читает почту.",
+                        aspect: "perfektiv",
+                        correct: false,
+                        german: "„Was soll ich ihm schreiben? ...“",
+                        feedback: "<strong>Falsch!</strong> Das Verb <em>написать</em> ist perfektive (vollendet). Die umgangssprachliche Konstruktion verlangt zwingend den <strong>imperfektiven Aspekt</strong> (писать)."
+                    },
+                    {
+                        text: "Что ему писать? Он в отпуске и не читает почту.",
+                        aspect: "imperfektiv",
+                        correct: true,
+                        german: "„Was bringt es, ihm zu schreiben? ...“",
+                        feedback: "<strong>Richtig!</strong> Das unvollendete Verb <strong>писать</strong> drückt hier perfekt aus, dass der Versuch des Schreibens völlig zwecklos ist, da er die Mails eh nicht liest."
+                    },
+                    {
+                        text: "Как ему писать? Он в отпуске и не читает почту.",
+                        aspect: "falsches Fragewort",
+                        correct: false,
+                        german: "„Wie soll ich ihm schreiben? ...“",
+                        feedback: "<strong>Falsch!</strong> Das Wort <em>Как</em> (Wie) erfragt nur die Methode. Um die umgangssprachliche Sinnlosigkeit auszudrücken, benötigst du das Schlüsselwort <strong>Что</strong>."
+                    }
+                ]
+            },
+            {
+                senderTranslation: "Anton: „Ruf in der Poliklinik an, frage nach den Öffnungszeiten.“",
+                senderMessage: "Позвони в поликлинику, спроси, как они работают.",
+                options: [
+                    {
+                        text: "Что туда звонить? Там сейчас обед, никто не ответит.",
+                        aspect: "imperfektiv",
+                        correct: true,
+                        german: "„Was bringt es, dort anzurufen? ...“",
+                        feedback: "<strong>Hervorragend!</strong> Das unvollendete Verb <strong>звонить</strong> passt ideal nach „Что“ im Kontext der Nutzlosigkeit des Anrufs."
+                    },
+                    {
+                        text: "Что туда позвонить? Там сейчас обед, никто не ответит.",
+                        aspect: "perfektiv",
+                        correct: false,
+                        german: "„Was soll ich dort anrufen? ...“",
+                        feedback: "<strong>Leider falsch.</strong> Das Verb <em>позвонить</em> ist vollendet (perfektiv). Damit verliert die Konstruktion ihre rhetorische Kraft der Sinnlosigkeit."
+                    },
+                    {
+                        text: "Зачем туда звонить? Там сейчас обед, никто не ответит.",
+                        aspect: "falsches Fragewort",
+                        correct: false,
+                        german: "„Warum dort anrufen? ...“",
+                        feedback: "<strong>Nicht ganz.</strong> <em>Зачем</em> (Wozu/Warum) ist eine neutrale Frage nach dem Zweck. Das umgangssprachliche Ausrufsgefühl der reinen Zeitverschwendung wird nur mit <strong>Что</strong> transportiert."
+                    }
+                ]
+            },
+            {
+                senderTranslation: "Anton: „Lass uns wetten/streiten, wer das nächste Fußballspiel gewinnt!“",
+                senderMessage: "Давай поспорим, кто выиграет следующий матч!",
+                options: [
+                    {
+                        text: "Что тут поспорить? Всё равно наши проиграют.",
+                        aspect: "perfektiv",
+                        correct: false,
+                        german: "„Was soll man da wetten? ...“",
+                        feedback: "<strong>Falsch.</strong> Du hast das vollendete Verb <em>поспорить</em> erwischt. Für dieses rhetorische Genervtsein brauchst du die unvollendete Form."
+                    },
+                    {
+                        text: "Почему тут спорить? Всё равно наши проиграют.",
+                        aspect: "falsches Fragewort",
+                        correct: false,
+                        german: "„Warum hier streiten? ...“",
+                        feedback: "<strong>Leider nein.</strong> <em>Почему</em> fragt nur nach den logischen Gründen. Um dem Freund sofort zu signalisieren, dass der Streit absolut zwecklos ist, nutzt man <strong>Что</strong>."
+                    },
+                    {
+                        text: "Что тут спорить? Всё равно наши проиграют.",
+                        aspect: "imperfektiv",
+                        correct: true,
+                        german: "„Was bringt es, hier zu streiten? ...“",
+                        feedback: "<strong>Wunderbar!</strong> Mit <strong>спорить</strong> (unvollendet) zeigst du perfekt, dass jede Debatte über das Spielergebnis im Vorhinein sinnlos ist."
+                    }
+                ]
+            },
+            {
+                senderTranslation: "Anton: „Wir müssen unbedingt Andrej fragen, wo die Wohnungsschlüssel sind.“",
+                senderMessage: "Надо спросить у Андрея, где ключи от квартиры.",
+                options: [
+                    {
+                        text: "Что у него спрашивать? Он сам их ищет уже час.",
+                        aspect: "imperfektiv",
+                        correct: true,
+                        german: "„Was soll man ihn da fragen? ...“",
+                        feedback: "<strong>Genial!</strong> Durch das unvollendete Verb <strong>спрашивать</strong> zeigst du sofort, dass der Versuch des Fragens reine Energieverschwendung ist."
+                    },
+                    {
+                        text: "Что у него спросить? Он сам их ищет уже час.",
+                        aspect: "perfektiv",
+                        correct: false,
+                        german: "„Was soll ich ihn fragen? ...“",
+                        feedback: "<strong>Falsch!</strong> Das perfektive Verb <em>спросить</em> zerstört die grammatikalische Sonderform. Hier ist zwingend das unvollendete Verb gefordert."
+                    },
+                    {
+                        text: "Где у него спрашивать? Он сам их ищет уже час.",
+                        aspect: "falsches Fragewort",
+                        correct: false,
+                        german: "„Wo soll ich ihn fragen? ...“",
+                        feedback: "<strong>Falsch.</strong> Das Wort <em>Где</em> (Wo) macht inhaltlich keinen Sinn. Die umgangssprachliche Struktur verlangt immer <strong>что + imperfektives Verb</strong>."
+                    }
+                ]
+            }
+        ];
+
+        let currentChatIndex = 0;
+        let score = 0;
+        let selectedOptionIndex = null;
+
+        function initChat() {
+            selectedOptionIndex = null;
+            document.getElementById("nav-container").classList.add("hidden");
+            document.getElementById("choices-heading").classList.remove("hidden");
+            document.getElementById("options-container").classList.remove("hidden");
+
+            // Header-Info aktualisieren
+            document.getElementById("progress-badge").innerText = `Chat ${currentChatIndex + 1} von ${chats.length}`;
+
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.innerHTML = ""; // Altes Gespräch löschen
+
+            const c = chats[currentChatIndex];
+
+            // 1. Nachricht von Anton (Deutsch als kleine gedämpfte Unterzeile)
+            const msgAnton = document.createElement("div");
+            msgAnton.className = "flex flex-col items-start max-w-[85%] self-start animate-[fadeIn_0.2s_ease-out_forwards]";
+            msgAnton.innerHTML = `
+                <div class="bg-white text-slate-900 rounded-2xl rounded-tl-none p-3 shadow-sm border border-slate-200">
+                    <p class="text-base font-semibold tracking-wide leading-relaxed">${c.senderMessage}</p>
+                    <p class="text-[11px] text-slate-500 italic mt-1 font-medium">${c.senderTranslation}</p>
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 ml-1">Gerade eben</span>
+            `;
+            chatWindow.appendChild(msgAnton);
+
+            // Optionen-Buttons rendern
+            const optionsContainer = document.getElementById("options-container");
+            optionsContainer.innerHTML = "";
+
+            c.options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.id = `opt-btn-${idx}`;
+                btn.className = "w-full text-left p-3.5 bg-white border-2 border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 transition-all duration-150 text-sm font-medium flex flex-col gap-1 active:scale-95 shadow-sm";
+                btn.onclick = () => selectOption(idx);
+                
+                // Markiert grammatikalische Kategorie für den Schüler
+                let aspectBadge = "Andere Wortart / Frage";
+                if (opt.aspect === "imperfektiv") aspectBadge = "imperfektiv (unvollendet)";
+                if (opt.aspect === "perfektiv") aspectBadge = "perfektiv (vollendet)";
+
+                btn.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-slate-800 font-bold tracking-wide">${opt.text}</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded flex-shrink-0">${aspectBadge}</span>
+                    </div>
+                    <span class="text-xs text-slate-500 italic font-normal">${opt.german}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Automatisch nach unten scrollen im Chat
+            setTimeout(() => {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }, 50);
+        }
+
+        function selectOption(idx) {
+            if (selectedOptionIndex !== null) return; // Doppelte Eingabe sperren
+            selectedOptionIndex = idx;
+
+            const c = chats[currentChatIndex];
+            const chosen = c.options[idx];
+            const isCorrect = chosen.correct;
+
+            if (isCorrect) {
+                score++;
+            }
+
+            // Options-Container und Überschrift ausblenden
+            document.getElementById("choices-heading").classList.add("hidden");
+            document.getElementById("options-container").classList.add("hidden");
+
+            const chatWindow = document.getElementById("chat-window");
+
+            // 2. Antwort des Schülers in den Chatverlauf einfügen (Blase rechts)
+            const msgStudent = document.createElement("div");
+            msgStudent.className = "flex flex-col items-end max-w-[85%] self-end animate-[fadeIn_0.2s_ease-out_forwards]";
+            msgStudent.innerHTML = `
+                <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3 shadow-md">
+                    <p class="text-base font-bold tracking-wide leading-relaxed">${chosen.text}</p>
+                    <p class="text-[11px] text-indigo-100 italic mt-1 font-medium">${chosen.german}</p>
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 mr-1">Gelesen</span>
+            `;
+            chatWindow.appendChild(msgStudent);
+
+            // 3. System-Feedback direkt in den Chat als Systemmeldung einfügen
+            const msgSystem = document.createElement("div");
+            msgSystem.className = "w-full flex justify-center py-2 animate-[fadeIn_0.3s_ease-out_0.2s_forwards] opacity-0";
+            
+            const feedbackBg = isCorrect ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-rose-50 border-rose-200 text-rose-900";
+            const feedbackIcon = isCorrect ? "check_circle" : "cancel";
+            const feedbackIconColor = isCorrect ? "text-emerald-600" : "text-rose-600";
+
+            msgSystem.innerHTML = `
+                <div class="border rounded-2xl p-4 max-w-[95%] w-full flex items-start gap-2.5 shadow-sm ${feedbackBg}">
+                    <span class="material-icons ${feedbackIconColor} text-xl flex-shrink-0 mt-0.5">${feedbackIcon}</span>
+                    <div class="text-xs leading-relaxed font-medium">
+                        ${chosen.feedback}
+                    </div>
+                </div>
+            `;
+            chatWindow.appendChild(msgSystem);
+
+            // Nächsten Navigations-Knopf einblenden
+            document.getElementById("nav-container").classList.remove("hidden");
+            
+            if (currentChatIndex === chats.length - 1) {
+                document.getElementById("next-button-text").innerText = "Zur Auswertung";
+            } else {
+                document.getElementById("next-button-text").innerText = "Nächster Chat";
+            }
+
+            // Erneut nach unten scrollen, um Feedback zu fokussieren
+            setTimeout(() => {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }, 100);
+        }
+
+        function loadNextChat() {
+            if (currentChatIndex < chats.length - 1) {
+                currentChatIndex++;
+                initChat();
+            } else {
+                // Simulation beendet
+                showSummary();
+            }
+        }
+
+        function showSummary() {
+            // Header-Fortschritt anpassen
+            document.getElementById("progress-badge").innerText = "Beendet";
+
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.innerHTML = ""; // Chat leeren
+
+            // Navigationsbereiche ausblenden
+            document.getElementById("nav-container").classList.add("hidden");
+            document.getElementById("choices-heading").classList.add("hidden");
+            document.getElementById("options-container").classList.add("hidden");
+
+            // Hübsche Summary-Karte im Chatfenster aufbauen
+            const summaryCard = document.createElement("div");
+            summaryCard.className = "w-full max-w-[95%] mx-auto bg-white rounded-3xl p-6 border border-slate-200 shadow-lg text-center flex flex-col items-center gap-4 animate-[fadeIn_0.4s_ease-out_forwards]";
+            
+            summaryCard.innerHTML = `
+                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+                    <span class="material-icons text-3xl">chat_bubble</span>
+                </div>
+                <h3 class="font-extrabold text-xl text-slate-900">Chatverlauf beendet!</h3>
+                <p class="text-xs text-slate-500 leading-relaxed max-w-xs">
+                    Klasse! Du hast alle Chat-Situationen erfolgreich analysiert und gelöst.
+                </p>
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl py-3 px-6 w-full max-w-[200px]">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block mb-0.5">Dein Score:</span>
+                    <span class="text-2xl font-black text-indigo-900">${score} von ${chats.length} richtig</span>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    <strong>Wichtigste Merkregel:</strong> In russischen Chats nutzt man nach <em>Что</em> immer den unvollendeten (imperfektiven) Aspekt, um auszudrücken: „Das bringt doch gar nichts!“
+                </p>
+                <button onclick="restartQuiz()" class="w-full mt-2 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-150 active:scale-95">
+                    <span class="material-icons text-base">replay</span>
+                    <span>Nochmal chatten</span>
+                </button>
+            `;
+            chatWindow.appendChild(summaryCard);
+        }
+
+        function restartQuiz() {
+            currentChatIndex = 0;
+            score = 0;
+            initChat();
+        }
+
+        // Erster Start
+        window.onload = function() {
+            initChat();
+        };
+    </script>
+</body>
+</html>
